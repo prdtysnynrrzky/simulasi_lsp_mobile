@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../helpers/currency_format.dart';
 
-PreferredSizeWidget cAppBar({String? noRek, String? name, String? saldo}) {
+PreferredSizeWidget sAppBar({String? noRek, String? name, String? saldo}) {
   return PreferredSize(
     preferredSize: const Size.fromHeight(75),
     child: AppBar(

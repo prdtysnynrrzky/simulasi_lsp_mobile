@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/balance_provider.dart';
-import '../widgets/appBar.dart';
+import '../widgets/sAppBar.dart';
 import '../widgets/cardMenu.dart';
 import "setting_screen.dart";
 import 'transfer_screen.dart';
@@ -15,7 +15,7 @@ class HomeScreen extends ConsumerWidget {
     final saldo = ref.watch(balanceProvider);
 
     return Scaffold(
-      appBar: cAppBar(
+      appBar: sAppBar(
         noRek: '123456789',
         name: 'Rekayasa Perangkat Lunak',
         saldo: saldo.toString(),
@@ -26,7 +26,7 @@ class HomeScreen extends ConsumerWidget {
             child: Opacity(
               opacity: 0.2,
               child: Image.asset(
-                'assets/images/smkpgriwlingi.png',
+                'assets/images/rpl-logo.png',
                 fit: BoxFit.contain,
               ),
             ),

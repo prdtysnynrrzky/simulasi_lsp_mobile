@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:simulasi_lsp_praditya/widgets/textField.dart';
 import '../helpers/currency_format.dart';
 import 'receipt_screen.dart';
-import '../widgets/appBar.dart';
+import '../widgets/sAppBar.dart';
 import '../widgets/button.dart';
 import '../providers/balance_provider.dart';
 import '../helpers/date_format.dart';
@@ -66,7 +66,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     final saldo = ref.watch(balanceProvider);
 
     return Scaffold(
-      appBar: cAppBar(
+      appBar: sAppBar(
         noRek: '123456789',
         name: 'Rekayasa Perangkat Lunak',
         saldo: saldo.toString(),
@@ -77,7 +77,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
             child: Opacity(
               opacity: 0.2,
               child: Image.asset(
-                'assets/images/smkpgriwlingi.png',
+                'assets/images/rpl-logo.png',
                 fit: BoxFit.contain,
               ),
             ),
