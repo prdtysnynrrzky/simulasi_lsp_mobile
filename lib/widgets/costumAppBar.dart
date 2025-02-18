@@ -53,21 +53,18 @@ PreferredSizeWidget customAppBar({String? noRek, String? name, String? saldo}) {
           ),
           Padding(
             padding: const EdgeInsets.only(right: 10),
-            child: InkWell(
-              onTap: () {},
-              child: Container(
-                height: 50,
-                width: 50,
-                decoration: const BoxDecoration(
-                  color: Colors.white24,
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.person,
-                    size: 30,
-                    color: Colors.white,
-                  ),
+            child: Container(
+              height: 50,
+              width: 50,
+              decoration: const BoxDecoration(
+                color: Colors.white24,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.person,
+                  size: 30,
+                  color: Colors.white,
                 ),
               ),
             ),

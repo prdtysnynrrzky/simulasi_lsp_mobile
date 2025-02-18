@@ -1,10 +1,11 @@
-// ignore_for_file: avoid_print, use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously
 
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:simulasi_lsp_praditya/services/text_to_speech_service.dart';
 import '../providers/balance_provider.dart';
 import '../widgets/costumAppBar.dart';
 
@@ -17,7 +18,7 @@ class SettingScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingScreenState extends ConsumerState<SettingScreen> {
-  BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
+  final BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
   List<BluetoothDevice> devices = [];
   BluetoothDevice? selectedDevice;
   bool isConnected = false;
@@ -28,13 +29,23 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
     super.initState();
     initBluetooth();
   }
-
+  
   Future<void> initBluetooth() async {
     bool? isOn = await bluetooth.isOn;
     if (isOn == true) {
       await refreshDevices();
     } else {
-      print('Bluetooth is off');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('Bluetooth tidak aktif. Mohon nyalakan Bluetooth Anda.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        TextToSpeechService()
+            .queue('Bluetooth tidak aktif. Mohon nyalakan Bluetooth Anda.');
+      }
     }
   }
 
@@ -42,76 +53,129 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
     if (isConnected && selectedDevice?.address == device.address) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Perangkat ${device.name} sudah terhubung'),
-          backgroundColor: Colors.blue,
+          content: Text('Perangkat ${device.name} sudah terhubung.'),
+          backgroundColor: Colors.green,
         ),
       );
+      TextToSpeechService().queue('Perangkat ${device.name} sudah terhubung.');
       return;
     }
 
     try {
-      await bluetooth.connect(device);
       setState(() {
-        selectedDevice = device;
-        isConnected = true;
+        isLoading = true;
       });
+
+      await bluetooth.connect(device);
+
+      if (mounted) {
+        setState(() {
+          selectedDevice = device;
+          isConnected = true;
+          isLoading = false;
+        });
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Berhasil Terhubung ke perangkat ${device.name}'),
+          content: Text('Berhasil Terhubung ke perangkat ${device.name}.'),
           backgroundColor: Colors.green,
         ),
       );
+      TextToSpeechService()
+          .queue('Berhasil Terhubung ke perangkat ${device.name}.');
     } catch (e) {
-      print('Gagal terhubung ke perangkat: $e');
-      setState(() {
-        isConnected = false;
-      });
+      if (mounted) {
+        setState(() {
+          isConnected = false;
+          isLoading = false;
+        });
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal menghubungkan ke perangkat ${device.name}'),
           backgroundColor: Colors.red,
         ),
       );
+      TextToSpeechService()
+          .queue('Gagal menghubungkan ke perangkat ${device.name}.');
     }
   }
 
   Future<void> disconnectDevice() async {
     String? deviceName = selectedDevice?.name;
-    await bluetooth.disconnect();
-    setState(() {
-      selectedDevice = null;
-      isConnected = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Koneksi ke perangkat ${deviceName ?? ''} terputus'),
-        backgroundColor: Colors.orange,
-      ),
-    );
-  }
+    try {
+      await bluetooth.disconnect();
+      if (mounted) {
+        setState(() {
+          selectedDevice = null;
+          isConnected = false;
+        });
+      }
 
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Koneksi ke perangkat ${deviceName ?? ''} terputus.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      TextToSpeechService()
+          .queue('Koneksi ke perangkat ${deviceName ?? ''} terputus.');
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isConnected = true;
+        });
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal memutuskan koneksi'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      TextToSpeechService().queue('Gagal memutuskan koneksi.');
+    }
+  }
+  
   Future<void> refreshDevices() async {
+    if (isLoading) return;
+
     setState(() {
       isLoading = true;
-      devices = [];
     });
 
     try {
-      devices = await bluetooth.getBondedDevices();
+      List<BluetoothDevice> bondedDevices = await bluetooth.getBondedDevices();
+      if (mounted) {
+        setState(() {
+          devices = bondedDevices;
+          isLoading = false;
+        });
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Daftar perangkat berhasil diperbarui.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      TextToSpeechService().queue('Daftar perangkat berhasil diperbarui.');
     } catch (e) {
-      print('Error getting bonded devices: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error getting bonded devices'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      TextToSpeechService().queue('Error getting bonded devices.');
     }
-
-    setState(() {
-      isLoading = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Daftar perangkat berhasil diperbarui'),
-        backgroundColor: Colors.green,
-      ),
-    );
   }
 
   @override
@@ -157,7 +221,7 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
                             IconButton(
                               icon: const Icon(Icons.refresh,
                                   size: 30, color: Colors.black),
-                              onPressed: () => refreshDevices(),
+                              onPressed: refreshDevices,
                             ),
                           ],
                         ),
@@ -184,9 +248,7 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
                                   fontSize: 12,
                                 ),
                               ),
-                        const Divider(
-                          color: Colors.grey,
-                        ),
+                        const Divider(color: Colors.grey),
                         const SizedBox(height: 10),
                         isLoading
                             ? const Center(child: CircularProgressIndicator())
@@ -241,9 +303,7 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       padding: const EdgeInsets.symmetric(
-                        vertical: 20,
-                        horizontal: 24,
-                      ),
+                          vertical: 20, horizontal: 24),
                     ),
                     child: const Text(
                       'Kembali',
@@ -255,9 +315,7 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(
-                  height: 20,
-                ),
+                const SizedBox(height: 20),
               ],
             ),
           ).animate().fadeIn(

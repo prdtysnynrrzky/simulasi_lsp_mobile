@@ -15,7 +15,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -81,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     )
                     .shimmer(
                       delay: 700.ms,
-                      duration: 2300.ms,
+                      duration: 3000.ms,
                       curve: Curves.easeInOut,
                     ),
                 Text(

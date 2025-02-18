@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:simulasi_lsp_praditya/services/text_to_speech_service.dart';
 import 'receipt_screen.dart';
 import '../helpers/currency_format.dart';
 import '../widgets/costumAppBar.dart';
@@ -24,7 +25,10 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
   final TextEditingController beritaController = TextEditingController();
 
   void transferSaldo() {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      TextToSpeechService().queue('Mohon lengkapi semua data dengan benar.');
+      return;
+    }
 
     final noRek = noRekController.text.trim();
     final name = nameController.text.trim();
@@ -40,10 +44,12 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
           backgroundColor: Colors.red,
         ),
       );
+      TextToSpeechService().queue('Saldo tidak mencukupi!');
       return;
     }
 
     saldoNotifier.update((state) => state - nominal);
+    TextToSpeechService().queue('Transfer ke $name berhasil.');
 
     Navigator.push(
       context,
@@ -125,9 +131,14 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                           Animate(
                             child: TextFormField(
                               keyboardType: TextInputType.number,
-                              validator: (value) => value!.isEmpty
-                                  ? 'Nomor rekening tujuan wajib diisi'
-                                  : null,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  TextToSpeechService().queue(
+                                      'Nomor rekening tujuan wajib diisi.');
+                                  return 'Nomor rekening tujuan wajib diisi';
+                                }
+                                return null;
+                              },
                               onFieldSubmitted: (value) {
                                 transferSaldo();
                               },
@@ -156,9 +167,14 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                           Animate(
                             child: TextFormField(
                               keyboardType: TextInputType.text,
-                              validator: (value) => value!.isEmpty
-                                  ? 'Nama penerima wajib diisi'
-                                  : null,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  TextToSpeechService()
+                                      .queue('Nama penerima wajib diisi.');
+                                  return 'Nama penerima wajib diisi';
+                                }
+                                return null;
+                              },
                               onFieldSubmitted: (value) {
                                 transferSaldo();
                               },
@@ -190,6 +206,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                               validator: (value) {
                                 final nominal = int.tryParse(value ?? '');
                                 if (nominal == null || nominal <= 5000) {
+                                  TextToSpeechService().queue(
+                                      'Nominal transfer harus lebih dari 5000.');
                                   return 'Nominal transfer harus lebih dari 5000';
                                 }
                                 return null;
@@ -224,6 +242,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
                               keyboardType: TextInputType.text,
                               validator: (value) {
                                 if (value != null && value.length > 15) {
+                                  TextToSpeechService()
+                                      .queue('Berita maksimal 15 karakter.');
                                   return 'Maksimal 15 karakter';
                                 }
                                 return null;
