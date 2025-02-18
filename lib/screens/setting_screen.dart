@@ -1,13 +1,15 @@
-// ignore_for_file: use_build_context_synchronously, avoid_print
+// ignore_for_file: avoid_print, use_build_context_synchronously
+
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/balance_provider.dart';
-import '../widgets/sAppBar.dart';
-import '../widgets/button.dart';
+import '../widgets/costumAppBar.dart';
 
 class SettingScreen extends ConsumerStatefulWidget {
+  static const routeName = '/setting-screen';
   const SettingScreen({super.key});
 
   @override
@@ -17,31 +19,27 @@ class SettingScreen extends ConsumerStatefulWidget {
 class _SettingScreenState extends ConsumerState<SettingScreen> {
   BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
   List<BluetoothDevice> devices = [];
-  BluetoothDevice? selectedDivice;
+  BluetoothDevice? selectedDevice;
   bool isConnected = false;
   bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    initBluetooth();
   }
 
   Future<void> initBluetooth() async {
     bool? isOn = await bluetooth.isOn;
     if (isOn == true) {
-      try {
-        devices = await bluetooth.getBondedDevices();
-      } catch (e) {
-        print('Error getting bonded devices: $e');
-      }
-      setState(() {});
+      await refreshDevices();
     } else {
       print('Bluetooth is off');
     }
   }
 
   Future<void> connectToDevice(BluetoothDevice device) async {
-    if (isConnected && selectedDivice?.address == device.address) {
+    if (isConnected && selectedDevice?.address == device.address) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Perangkat ${device.name} sudah terhubung'),
@@ -54,10 +52,9 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
     try {
       await bluetooth.connect(device);
       setState(() {
-        selectedDivice = device;
+        selectedDevice = device;
         isConnected = true;
       });
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Berhasil Terhubung ke perangkat ${device.name}'),
@@ -65,7 +62,7 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
         ),
       );
     } catch (e) {
-      print('gagal terhubung ke perangkat $e');
+      print('Gagal terhubung ke perangkat: $e');
       setState(() {
         isConnected = false;
       });
@@ -79,10 +76,10 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
   }
 
   Future<void> disconnectDevice() async {
-    String? deviceName = selectedDivice?.name;
+    String? deviceName = selectedDevice?.name;
     await bluetooth.disconnect();
     setState(() {
-      selectedDivice = null;
+      selectedDevice = null;
       isConnected = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -99,7 +96,11 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
       devices = [];
     });
 
-    await initBluetooth();
+    try {
+      devices = await bluetooth.getBondedDevices();
+    } catch (e) {
+      print('Error getting bonded devices: $e');
+    }
 
     setState(() {
       isLoading = false;
@@ -118,7 +119,7 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
     final saldo = ref.watch(balanceProvider);
 
     return Scaffold(
-      appBar: sAppBar(
+      appBar: customAppBar(
         noRek: '123456789',
         name: 'Rekayasa Perangkat Lunak',
         saldo: saldo.toString(),
@@ -129,126 +130,156 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
             child: Opacity(
               opacity: 0.2,
               child: Image.asset(
-                'assets/images/rpl-logo.png',
+                'assets/logo/rpl.png',
                 fit: BoxFit.contain,
               ),
             ),
           ),
-          Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Refresh ->',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.refresh,
-                                size: 30, color: Colors.black),
-                            onPressed: () => refreshDevices(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      isConnected
-                          ? ListTile(
-                              title:
-                                  Text('Terhubung ke: ${selectedDivice?.name}'),
-                              trailing: ElevatedButton(
-                                onPressed: disconnectDevice,
-                                child: Text(
-                                  'Putuskan',
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : Text(
-                              'data',
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 19),
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Refresh ->',
                               style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
                               ),
                             ),
-                      const Divider(
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(height: 10),
-                      isLoading
-                          ? const Center(child: CircularProgressIndicator())
-                          : devices.isNotEmpty
-                              ? ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: devices.length,
-                                  itemBuilder: (context, index) {
-                                    final device = devices[index];
-                                    return ListTile(
-                                      title: Text(device.name ?? 'Unknown'),
-                                      subtitle: Text(device.address.toString()),
-                                      trailing: ElevatedButton(
-                                        onPressed: () =>
-                                            connectToDevice(device),
-                                        child: Text(
-                                          "Hubungkan",
-                                          style: GoogleFonts.poppins(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 18,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                )
-                              : Text(
-                                  'Tidak ada perangkat Bluetooth ditemukan',
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
+                            IconButton(
+                              icon: const Icon(Icons.refresh,
+                                  size: 30, color: Colors.black),
+                              onPressed: () => refreshDevices(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        isConnected
+                            ? ListTile(
+                                title: Text(
+                                    'Terhubung ke: ${selectedDevice?.name}'),
+                                trailing: ElevatedButton(
+                                  onPressed: disconnectDevice,
+                                  child: Text(
+                                    'Putuskan',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
                                   ),
                                 ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        child: cButton(
-                          text: 'Kembali',
-                          onPressed: () => Navigator.pop(context),
-                          color: Colors.red,
+                              )
+                            : Text(
+                                'Tidak ada perangkat yang terhubung',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 12,
+                                ),
+                              ),
+                        const Divider(
+                          color: Colors.grey,
                         ),
+                        const SizedBox(height: 10),
+                        isLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : devices.isNotEmpty
+                                ? ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: devices.length,
+                                    itemBuilder: (context, index) {
+                                      final device = devices[index];
+                                      return ListTile(
+                                        title: Text(device.name ?? 'Unknown'),
+                                        subtitle:
+                                            Text(device.address.toString()),
+                                        trailing: ElevatedButton(
+                                          onPressed: () =>
+                                              connectToDevice(device),
+                                          child: Text(
+                                            "Hubungkan",
+                                            style: GoogleFonts.poppins(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 18,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Text(
+                                    textAlign: TextAlign.center,
+                                    'Tidak ada perangkat Bluetooth ditemukan',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  width: MediaQuery.of(context).size.width,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ],
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 20,
+                        horizontal: 24,
+                      ),
+                    ),
+                    child: const Text(
+                      'Kembali',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                color: Colors.blue,
-                child: Text(
-                  'Rekayasa Perangkat Lunak',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
+                const SizedBox(
+                  height: 20,
                 ),
+              ],
+            ),
+          ).animate().fadeIn(
+                delay: 300.ms,
+                curve: Curves.easeIn,
+                duration: 500.ms,
               ),
-            ],
-          ),
         ],
+      ),
+      bottomNavigationBar: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        color: Colors.blue,
+        child: Text(
+          'Rekayasa Perangkat Lunak',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

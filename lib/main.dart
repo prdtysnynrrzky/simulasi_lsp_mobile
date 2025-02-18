@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:simulasi_lsp_praditya/screens/home_screen.dart';
+import 'package:simulasi_lsp_praditya/screens/splash_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/setting_screen.dart';
+import 'screens/transfer_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,10 +17,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'ATM Mobile Sederhana',
-      home: HomeScreen(),
+      initialRoute: SplashScreen.routeName,
+      routes: {
+        SplashScreen.routeName: (context) => const SplashScreen(),
+        HomeScreen.routeName: (context) => const HomeScreen(),
+        TransferScreen.routeName: (context) => const TransferScreen(),
+        SettingScreen.routeName: (context) => const SettingScreen(),
+      },
     );
   }
 }

@@ -1,13 +1,14 @@
-// ignore_for_file: use_build_context_synchronously, avoid_print
+// ignore_for_file: avoid_print, use_build_context_synchronously
+
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../helpers/currency_format.dart';
 import '../providers/balance_provider.dart';
-import '../widgets/sAppBar.dart';
-import '../widgets/button.dart';
-import 'home_screen.dart';
+import '../widgets/costumAppBar.dart';
 
 class ReceiptScreen extends ConsumerStatefulWidget {
   final String tanggal;
@@ -46,40 +47,57 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
     var bluetoothStatus = await Permission.bluetooth.request();
 
     if (bluetoothStatus.isGranted) {
-      bool? isConnectted = await bluetooth.isConnected;
+      bool? isConnected = await bluetooth.isConnected;
       bool? isOn = await bluetooth.isOn;
 
-      if (isOn != null && !isOn) {
-        print('Bluetooth tidak aktif, mohon aktifkan bluettoh');
-      } else if (isConnectted == null || !isConnectted) {
+      if (isOn == null || !isOn) {
+        print('Bluetooth tidak aktif, mohon aktifkan Bluetooth');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bluetooth tidak aktif, mohon aktifkan Bluetooth'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } else if (isConnected == null || !isConnected) {
         List<BluetoothDevice> devices = await bluetooth.getBondedDevices();
 
         if (devices.isNotEmpty) {
-          // await bluetooth.connect(devices.first);
-          await bluetooth
-              .connect(devices[0])
-              .timeout(const Duration(seconds: 300), onTimeout: () {
-            throw Exception('Timeout : Gagal menghubungkan ke perangkat');
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Berhasil terhubung ke $devices'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          try {
+            await bluetooth
+                .connect(devices[0])
+                .timeout(const Duration(seconds: 10), onTimeout: () {
+              throw Exception('Timeout: Gagal menghubungkan ke perangkat');
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content:
+                    Text('Berhasil terhubung ke perangkat: ${devices[0].name}'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Gagal terhubung ke perangkat: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         } else {
-          print('tidak ada perangkat terpasang yang ditemukan');
-          const SnackBar(
-            content: Text('Tidak ada perangkat terpasang yang ditemukan'),
-            backgroundColor: Colors.red,
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tidak ada perangkat terpasang yang ditemukan'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
     } else {
-      print('izin untuk bluetooh tidak di berikan');
-      const SnackBar(
-        content: Text('Izin untuk bluetooh tidak di berikan'),
-        backgroundColor: Colors.red,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Izin untuk Bluetooth tidak diberikan'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -93,18 +111,16 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
     int baris4 = totalKolom - ('Nama Penerima'.length + widget.penerima.length);
     int baris5 =
         totalKolom - ('No. Rek Tujuan'.length + widget.noRekening.length);
-    int baris6 =
-        totalKolom - ('Nominal Transfer'.length + widget.nominal.bitLength);
+    int baris6 = totalKolom -
+        ('Nominal Transfer'.length + widget.nominal.toString().length);
     int baris7 = totalKolom - ('Berita'.length + widget.berita.length);
 
     String format1 = 'Tanggal Transaksi${' ' * baris1}${widget.tanggal}';
     String format2 = 'Jenis Transaksi${' ' * baris2}${widget.jenis}';
-    String format3 =
-        'Nama Pengirim${' ' * baris3}${widget.pengirim.split(' '[0])}';
-    String format4 =
-        'Nama Penerima${' ' * baris4}${widget.penerima.split(' '[0])}';
+    String format3 = 'Nama Pengirim${' ' * baris3}${widget.pengirim}';
+    String format4 = 'Nama Penerima${' ' * baris4}${widget.penerima}';
     String format5 = 'No. Rek Tujuan${' ' * baris5}${widget.noRekening}';
-    String format6 = 'Nominal Transfer${' ' * baris6}${widget.nominal}';
+    String format6 = 'Nominal Transfer${' ' * baris6}Rp${widget.nominal}';
     String format7 = 'Berita${' ' * baris7}${widget.berita}';
 
     if (await bluetooth.isConnected ?? false) {
@@ -122,7 +138,13 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
       bluetooth.printNewLine();
       bluetooth.paperCut();
     } else {
-      _printReceipt();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Gagal menghubungkan ke printer, pastikan Bluetooth aktif dan printer terhubung.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -131,7 +153,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
     final saldo = ref.watch(balanceProvider);
 
     return Scaffold(
-      appBar: sAppBar(
+      appBar: customAppBar(
         noRek: '123456789',
         name: 'Rekayasa Perangkat Lunak',
         saldo: saldo.toString(),
@@ -142,55 +164,135 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
             child: Opacity(
               opacity: 0.2,
               child: Image.asset(
-                'assets/images/rpl-logo.png',
+                'assets/logo/rpl.png',
                 fit: BoxFit.contain,
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(24.0),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 19),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Bukti Transaksi',
+                  'Transfer Berhasil',
                   style: GoogleFonts.poppins(
                       fontWeight: FontWeight.bold, fontSize: 25),
-                ),
+                ).animate().fadeIn(
+                      delay: 100.ms,
+                      curve: Curves.easeIn,
+                      duration: 500.ms,
+                    ),
                 const SizedBox(height: 20),
                 Container(
+                  width: 55,
+                  height: 55,
                   alignment: Alignment.center,
-                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.green,
+                    color: Colors.lightGreen,
                     borderRadius: BorderRadius.circular(100),
                   ),
                   child: const Icon(
-                    Icons.checklist,
+                    Icons.check,
                     color: Colors.white,
-                    size: 25,
+                    size: 20,
                   ),
-                ),
+                ).animate().fadeIn(
+                      delay: 200.ms,
+                      curve: Curves.easeIn,
+                      duration: 500.ms,
+                    ),
                 const SizedBox(height: 20),
-                infoRow("Tanggal Transaksi", widget.tanggal),
-                infoRow("Jenis Transaksi", widget.jenis),
-                infoRow("Nama Pengirim", widget.pengirim),
-                infoRow("Nama Penerima", widget.penerima),
-                infoRow("No Rek. Tujuan", widget.noRekening),
-                infoRow("Nominal Transfer", 'Rp${widget.nominal}'),
-                infoRow("Berita", widget.berita),
+                infoRow("Tanggal Transaksi", widget.tanggal).animate().fadeIn(
+                      delay: 300.ms,
+                      curve: Curves.easeIn,
+                      duration: 500.ms,
+                    ),
+                infoRow("Jenis Transaksi", widget.jenis).animate().fadeIn(
+                      delay: 400.ms,
+                      curve: Curves.easeIn,
+                      duration: 500.ms,
+                    ),
+                infoRow("Nama Pengirim", widget.pengirim).animate().fadeIn(
+                      delay: 500.ms,
+                      curve: Curves.easeIn,
+                      duration: 500.ms,
+                    ),
+                infoRow("Nama Penerima", widget.penerima).animate().fadeIn(
+                      delay: 600.ms,
+                      curve: Curves.easeIn,
+                      duration: 500.ms,
+                    ),
+                infoRow("No Rek. Tujuan", widget.noRekening).animate().fadeIn(
+                      delay: 700.ms,
+                      curve: Curves.easeIn,
+                      duration: 500.ms,
+                    ),
+                infoRow(
+                        "Nominal Transfer",
+                        CurrencyFormat.toRupiah(
+                            int.tryParse(widget.nominal.toString()) ?? 0))
+                    .animate()
+                    .fadeIn(
+                      delay: 800.ms,
+                      curve: Curves.easeIn,
+                      duration: 500.ms,
+                    ),
+                infoRow("Berita", widget.berita).animate().fadeIn(
+                      delay: 900.ms,
+                      curve: Curves.easeIn,
+                      duration: 500.ms,
+                    ),
                 const SizedBox(height: 20),
-                cButton(
-                  text: 'Cetak & Kembali',
-                  onPressed: () async {
-                    Navigator.pop(context);
-                  },
-                  color: Colors.lightBlue,
-                ),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      print('Tombol Cetak & Kembali ditekan');
+                      _printReceipt();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 20,
+                        horizontal: 24,
+                      ),
+                    ),
+                    child: const Text(
+                      'Cetak & Kembali',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ).animate().fadeIn(
+                      delay: 1000.ms,
+                      curve: Curves.easeIn,
+                      duration: 500.ms,
+                    )
               ],
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        color: Colors.blue,
+        child: Text(
+          'Rekayasa Perangkat Lunak',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

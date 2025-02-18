@@ -1,0 +1,2 @@
+D:/PBTGM/simulasi_lsp_mobile/android/app/.cxx/Debug/2258666v/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/PBTGM/simulasi_lsp_mobile/android/app/.cxx/Debug/2258666v/armeabi-v7a/CMakeFiles/rebuild_cache.dir
