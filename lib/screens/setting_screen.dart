@@ -1,5 +1,4 @@
 // ignore_for_file: use_build_context_synchronously
-
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -29,7 +28,7 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
     super.initState();
     initBluetooth();
   }
-  
+
   Future<void> initBluetooth() async {
     bool? isOn = await bluetooth.isOn;
     if (isOn == true) {
@@ -137,7 +136,7 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
       TextToSpeechService().queue('Gagal memutuskan koneksi.');
     }
   }
-  
+
   Future<void> refreshDevices() async {
     if (isLoading) return;
 

@@ -30,7 +30,7 @@ Widget cardMenu({
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.w500,
-              fontSize: 14,
+              fontSize: 10,
               color: Colors.white,
             ),
           ),

@@ -1,5 +1,4 @@
 // ignore_for_file: use_build_context_synchronously
-
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -112,21 +111,21 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
     String format5 =
         'No. Rek Tujuan${' ' * (totalKolom - ('No. Rek Tujuan'.length + widget.noRekening.length))}${widget.noRekening}';
     String format6 =
-        'Nominal Transfer${' ' * (totalKolom - ('Nominal Transfer'.length + widget.nominal.toString().length))}Rp${widget.nominal}';
+        'Nominal Transfer${' ' * (totalKolom - ('Nominal Transfer'.length + CurrencyFormat.toRupiah(widget.nominal).length))}${CurrencyFormat.toRupiah(widget.nominal)}';
     String format7 =
         'Berita${' ' * (totalKolom - ('Berita'.length + widget.berita.length))}${widget.berita}';
 
     if (await bluetooth.isConnected ?? false) {
       try {
-        bluetooth.printCustom('DIGIHAM BANK', 1, 1);
+        bluetooth.printCustom('DIGIHAM BANK', 2, 1);
         bluetooth.printNewLine();
         bluetooth.printCustom(format1, 1, 0);
-        bluetooth.printCustom(format2, 2, 0);
-        bluetooth.printCustom(format3, 3, 0);
-        bluetooth.printCustom(format4, 4, 0);
-        bluetooth.printCustom(format5, 5, 0);
-        bluetooth.printCustom(format6, 6, 0);
-        bluetooth.printCustom(format7, 7, 0);
+        bluetooth.printCustom(format2, 1, 0);
+        bluetooth.printCustom(format3, 1, 0);
+        bluetooth.printCustom(format4, 1, 0);
+        bluetooth.printCustom(format5, 1, 0);
+        bluetooth.printCustom(format6, 1, 0);
+        bluetooth.printCustom(format7, 1, 0);
         bluetooth.printNewLine();
         bluetooth.printCustom('LSP - PRADITYA SONY NURRIZKY', 1, 1);
         bluetooth.printNewLine();
@@ -148,6 +147,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
           ),
         );
         TextToSpeechService().queue('Gagal mencetak: $e');
+        Navigator.pop(context);
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -159,6 +159,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
       );
       TextToSpeechService().queue(
           'Printer tidak terhubung. Pastikan Bluetooth aktif dan printer terhubung.');
+      Navigator.pop(context);
     }
 
     setState(() {
@@ -187,68 +188,70 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
               ),
             ),
           ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 19),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Transfer Berhasil',
-                  style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold, fontSize: 25),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  width: 55,
-                  height: 55,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.lightGreen,
-                    borderRadius: BorderRadius.circular(100),
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 19),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Transfer Berhasil',
+                    style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold, fontSize: 25),
                   ),
-                  child: const Icon(
-                    Icons.check,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                infoRow("Tanggal Transaksi", widget.tanggal),
-                infoRow("Jenis Transaksi", widget.jenis),
-                infoRow("Nama Pengirim", widget.pengirim),
-                infoRow("Nama Penerima", widget.penerima),
-                infoRow("No Rek. Tujuan", widget.noRekening),
-                infoRow("Nominal Transfer",
-                    CurrencyFormat.toRupiah(widget.nominal)),
-                infoRow("Berita", widget.berita),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : _printReceipt,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 20, horizontal: 24),
+                  const SizedBox(height: 20),
+                  Container(
+                    width: 55,
+                    height: 55,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.lightGreen,
+                      borderRadius: BorderRadius.circular(100),
                     ),
-                    child: isLoading
-                        ? const CircularProgressIndicator(
-                            color: Colors.white,
-                          )
-                        : const Text(
-                            'Cetak & Kembali',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
-                )
-              ],
+                  const SizedBox(height: 20),
+                  infoRow("Tanggal Transaksi", widget.tanggal),
+                  infoRow("Jenis Transaksi", widget.jenis),
+                  infoRow("Nama Pengirim", widget.pengirim),
+                  infoRow("Nama Penerima", widget.penerima),
+                  infoRow("No Rek. Tujuan", widget.noRekening),
+                  infoRow("Nominal Transfer",
+                      CurrencyFormat.toRupiah(widget.nominal)),
+                  infoRow("Berita", widget.berita),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : _printReceipt,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 20, horizontal: 24),
+                      ),
+                      child: isLoading
+                          ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                          : const Text(
+                              'Cetak & Kembali',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  )
+                ],
+              ),
             ),
           ),
         ],
@@ -274,16 +277,11 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(title, style: GoogleFonts.poppins(fontSize: 13)),
-            SizedBox(
-              width: 200,
-              child: Text(
-                value,
-                maxLines: 1,
-                textAlign: TextAlign.end,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold, fontSize: 11),
-              ),
+            Text(
+              value,
+              maxLines: 1,
+              style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold, fontSize: 10),
             ),
           ],
         ),
