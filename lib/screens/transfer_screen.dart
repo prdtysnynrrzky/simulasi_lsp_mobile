@@ -66,11 +66,11 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
           berita: berita,
         ),
       ),
-    ).then(
-      (_) {
+    ).then((_) {
+      if (mounted) {
         Navigator.pop(context);
-      },
-    );
+      }
+    });
   }
 
   @override
@@ -81,7 +81,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
       appBar: customAppBar(
         noRek: '123456789',
         name: 'Rekayasa Perangkat Lunak',
-        saldo: saldo.toString(),
+        saldo: CurrencyFormat.toRupiah(saldo),
       ),
       body: Stack(
         children: [
@@ -94,281 +94,114 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
               ),
             ),
           ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 19),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.symmetric(vertical: 24),
-                            child: Text(
-                              'Saldo Anda: ${CurrencyFormat.toRupiah(int.parse(saldo.toString()))}',
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 22,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            'Transfer',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 22,
-                              color: Colors.blue,
-                            ),
-                          ).animate().fadeIn(
-                                delay: 200.ms,
-                                curve: Curves.easeIn,
-                                duration: 500.ms,
-                              ),
-                          const Divider().animate().fadeIn(
-                                delay: 200.ms,
-                                curve: Curves.easeIn,
-                                duration: 500.ms,
-                              ),
-                          const SizedBox(height: 24),
-                          Animate(
-                            child: TextFormField(
-                              keyboardType: TextInputType.number,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  TextToSpeechService().queue(
-                                      'Nomor rekening tujuan wajib diisi.');
-                                  return 'Nomor rekening tujuan wajib diisi';
-                                }
-                                return null;
-                              },
-                              onFieldSubmitted: (value) {
-                                transferSaldo();
-                              },
-                              controller: noRekController,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 15, fontWeight: FontWeight.w500),
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 19),
-                                labelText: "No Rekening Tujuan",
-                                border: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                    color: Colors.blue,
-                                    width: 2,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ).animate().fadeIn(
-                                  delay: 200.ms,
-                                  curve: Curves.easeIn,
-                                  duration: 500.ms,
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          Animate(
-                            child: TextFormField(
-                              keyboardType: TextInputType.text,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  TextToSpeechService()
-                                      .queue('Nama penerima wajib diisi.');
-                                  return 'Nama penerima wajib diisi';
-                                }
-                                return null;
-                              },
-                              onFieldSubmitted: (value) {
-                                transferSaldo();
-                              },
-                              controller: nameController,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 15, fontWeight: FontWeight.w500),
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 19),
-                                labelText: "Nama Penerima",
-                                border: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                    color: Colors.blue,
-                                    width: 2,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ).animate().fadeIn(
-                                  delay: 400.ms,
-                                  curve: Curves.easeIn,
-                                  duration: 500.ms,
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          Animate(
-                            child: TextFormField(
-                              keyboardType: TextInputType.number,
-                              validator: (value) {
-                                final nominal = int.tryParse(value ?? '');
-                                if (nominal == null || nominal <= 5000) {
-                                  TextToSpeechService().queue(
-                                      'Nominal transfer harus lebih dari 5000.');
-                                  return 'Nominal transfer harus lebih dari 5000';
-                                }
-                                return null;
-                              },
-                              onFieldSubmitted: (value) {
-                                transferSaldo();
-                              },
-                              controller: nominalController,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 15, fontWeight: FontWeight.w500),
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 19),
-                                labelText: "Nominal Transfer",
-                                border: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                    color: Colors.blue,
-                                    width: 2,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ).animate().fadeIn(
-                                  delay: 600.ms,
-                                  curve: Curves.easeIn,
-                                  duration: 500.ms,
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          Animate(
-                            child: TextFormField(
-                              keyboardType: TextInputType.text,
-                              validator: (value) {
-                                if (value != null && value.length > 15) {
-                                  TextToSpeechService()
-                                      .queue('Berita maksimal 15 karakter.');
-                                  return 'Maksimal 15 karakter';
-                                }
-                                return null;
-                              },
-                              onFieldSubmitted: (value) {
-                                transferSaldo();
-                              },
-                              controller: beritaController,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 15, fontWeight: FontWeight.w500),
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 19),
-                                labelText: "Berita",
-                                border: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                    color: Colors.blue,
-                                    width: 2,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                      color: Colors.grey, width: 1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                    width: 1,
-                                    color: Colors.grey, // Desired focus color
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ).animate().fadeIn(
-                                  delay: 800.ms,
-                                  curve: Curves.easeIn,
-                                  duration: 500.ms,
-                                ),
-                          ),
-                          const SizedBox(height: 24),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 20,
-                                      horizontal: 24,
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Batal',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: transferSaldo,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 20,
-                                      horizontal: 24,
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Kirim',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ).animate().fadeIn(
-                                delay: 1000.ms,
-                                curve: Curves.easeIn,
-                                duration: 500.ms,
-                              ),
-                        ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 19),
+            child: SingleChildScrollView(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 24),
+                    Text(
+                      'Saldo Anda: ${CurrencyFormat.toRupiah(saldo)}',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                        color: Colors.black,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 24),
+                    _buildTextField(
+                      controller: noRekController,
+                      label: 'No Rekening Tujuan',
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Nomor rekening tujuan wajib diisi'
+                          : null,
+                    ),
+                    _buildTextField(
+                      controller: nameController,
+                      label: 'Nama Penerima',
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Nama penerima wajib diisi'
+                          : null,
+                    ),
+                    _buildTextField(
+                      controller: nominalController,
+                      label: 'Nominal Transfer',
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        final nominal = int.tryParse(value ?? '');
+                        if (nominal == null || nominal <= 5000) {
+                          return 'Nominal transfer harus lebih dari 5000';
+                        }
+                        return null;
+                      },
+                    ),
+                    _buildTextField(
+                      controller: beritaController,
+                      label: 'Berita',
+                      validator: (value) => value != null && value.length > 15
+                          ? 'Maksimal 15 karakter'
+                          : null,
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Batal',
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: transferSaldo,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Kirim',
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        color: Colors.blue,
-        child: Text(
-          'Rekayasa Perangkat Lunak',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w500,
-            fontSize: 16,
-            color: Colors.white,
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
       ),
