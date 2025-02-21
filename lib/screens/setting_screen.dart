@@ -61,9 +61,11 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
     }
 
     try {
-      setState(() {
-        isLoading = true;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = true;
+        });
+      }
 
       await bluetooth.connect(device);
 
@@ -103,6 +105,16 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
   }
 
   Future<void> disconnectDevice() async {
+    if (selectedDevice == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak ada perangkat yang terhubung untuk diputuskan.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     String? deviceName = selectedDevice?.name;
     try {
       await bluetooth.disconnect();
@@ -112,7 +124,6 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
           isConnected = false;
         });
       }
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Koneksi ke perangkat ${deviceName ?? ''} terputus.'),
@@ -145,6 +156,22 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
     });
 
     try {
+      bool? isOn = await bluetooth.isOn;
+      if (isOn != true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Bluetooth tidak aktif. Mohon nyalakan Bluetooth.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        TextToSpeechService()
+            .queue('Bluetooth tidak aktif. Mohon nyalakan Bluetooth.');
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+
       List<BluetoothDevice> bondedDevices = await bluetooth.getBondedDevices();
       if (mounted) {
         setState(() {
@@ -169,11 +196,12 @@ class _SettingScreenState extends ConsumerState<SettingScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Error getting bonded devices'),
+          content: Text('Error mendapatkan perangkat yang terhubung'),
           backgroundColor: Colors.red,
         ),
       );
-      TextToSpeechService().queue('Error getting bonded devices.');
+      TextToSpeechService()
+          .queue('Error mendapatkan perangkat yang terhubung.');
     }
   }
 
